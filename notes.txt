@@ -1,0 +1,168 @@
+#   Pixel Positions - Job Posting Website  #
+
+*   Lesson 29   *
+
+    -> Create new migration for employer table since employer will be posting jobs.
+        ``` php artisan make:migration create_employer_table
+    -> An employer has a 'name' and a 'logo'. Also, an employer belongs to a User. A user signs up, creates the employer and posts the job as the employer. Introduce these fields in the migration's 'up()':
+    ```create_employers_table.php
+
+        public function up(): void
+        {
+            Schema::create('employer', function (Blueprint $table) {
+                $table->id();
+                $table->foreignIdFor(User::class);
+                $table->string('name');
+                $table->string('logo');
+                $table->timestamps();
+            });
+        }
+
+    ```
+
+    -> Migrate the database:
+        ``` php artisan migrate ```
+    -> Create and connect to the new database using '*.SQLite' file in database folder of project.
+
+    -> Remember laravel ships some tables e.g. jobs, job_batches, failed_jobs. We'll change the names of these tables in './config/queue.php' and also rename the 'creat_jobs_table' to 'create_queued_jobs_table.php' and also change the names of the tables in the migration files.
+
+    -> After refactoring the names, run:
+        ``` php artisan migrate:fresh ```
+
+    -> Create a Model, Controller, Factory, database seeder, policy corresponding to Employer:
+        ``` php artisan make:model Employer -cfs --policy ```
+
+    -> Create all files for Jobs at once:
+        ``` php artisan make:model Job --all ```
+
+    -> Open the 'create_jobs_table.php'
+    -> To publish a job, we need 'Job Title', 'Salary', 'location', 'schedule (default to full-time', 'url (to actual job listing for example to the company page hiring for the job', 'featured (default to false)', and finally relationship i.e. A job belongs to an Employer:
+    ``` create_jobs_table.php
+
+        public function up(): void
+        {
+            Schema::create('jobs', function (Blueprint $table) {
+                $table->id();
+                $table->foreignIdFor(Employer::class);
+                $table->string('title');
+                $table->string('salary');
+                $table->string('location');
+                $table->string('schedule')->default('Full Time');
+                $table->string('url');  // url to actual job listing
+                $table->boolean('featured')->default(false);
+                $table->timestamps();
+            });
+        }
+
+        # run ``` php artisan migrate ``` to migrate the database
+
+    * *     Setting up Relationships    * *
+
+        -> An Employer belongs to a user:
+        ```Employer.php
+
+            class Employer extends Model
+            {
+                /** @use HasFactory<\Database\Factories\EmployerFactory> */
+                use HasFactory;
+
+                public function user(): BelongsTo
+                {
+                    return $this->belongsTo(User::class);
+                }
+            }
+        ```
+        -> Let's do the inverse in User class. A user has one employer:
+            ```User.php
+
+                public function employer()
+                {
+                    return $this->hasOne(Employer::class);
+                }
+
+            ```
+
+        -> Also make relationship for job. A Job BelongsTo an Employer:
+        ```Job.php
+
+            public function employer()
+            {
+                return $this->belongsTo(Employer::class);
+            }
+
+        ```
+        -> Let's do the inverse for employer. An Employer hasMany Jobs:
+        ```Employer.php
+
+            public function jobs(): hasMany
+            {
+                return $this->hasMany(Job::class);
+            }
+
+            # make sure you have imported the required relational classes.
+        ```
+
+    * *     TESTING    * *
+
+        * * *   Flush-out Factories    * * *
+
+            -> Before testing, let's flush out our database factories.
+            -> An Employer has a name, image url, and relationship with the user.
+            ```EmployerFactory.php
+
+                public function definition(): array
+                {
+                    return [
+                        'name' => fake()->name(),
+                        'logo' => fake()->imageUrl(),
+                        'user_id' => User::factory(),
+                    ];
+                }
+
+            -> A Job belongs to an Employer, has title, salary and other attributes:
+            ```JobFactory.php
+
+                public function definition(): array
+                {
+                    return [
+                        'employer_id' => Employer::factory(),
+                        'title' => fake()->jobTitle,
+                        'salary' => fake()->randomElement(['$50,000', '$90,000', '$100,000', '$125,000', '$150,0000']),
+                        'location' => 'Remote',
+                        'schedule' => fake()->randomElement(['Full Time', 'Part Time']),
+                        'url' => fake()->url,
+                        'featured' => false
+
+                    ];
+                }
+
+
+                # fake() has a method randomElement([]) which takes an array and returns a random element from specific array.
+
+        * * *   Write some Tests    * * *
+
+            -> We had used Pest as testing framework. Pest is a wrapper around phpunit.xml. We can use 'phpunit.xml' to configure how Pest is going to behave.
+            -> Uncomment all the environment variables in the 'phpunit.xml'.
+            -> Let's write some tests:
+
+                ``` php artisan make:test
+                > Name: JobTest
+
+                    # Feature test is used when we have to test a whole spectrum of functions.
+
+                > Test: Unit  # Unit testing is narrower than Feature testing
+                ```
+
+            -> Run the test:
+                ``` php artisan test ```
+
+            * * * *     Test Driven Development     * * * *
+
+                -> Usually the flow is we write our code first and then test it. In TDD, we do the opposite. We run our test, it fails then we write our code accordingly solving these errors.
+
+
+
+
+
+
+
