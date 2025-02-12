@@ -4,9 +4,10 @@
         <section class="text-center pt-6">
             <x-section-heading class="font-bold text-4xl">Let's Find Your New Job</x-section-heading>
 
-            <form action="" class="mt-6">
-                <input type="text" placeholder="I'm looking for....." class="rounded-xl bg-white/5 border-white/10 px-5 py-2 w-full max-w-xl">
-            </form>
+            <x-forms.form action="/search" class="mt-6">
+                <x-forms.input :label="false" name="q" placeholder="Web Developer...." />
+            </x-forms.form>
+
         </section>
 
         <section class="mt-10">
